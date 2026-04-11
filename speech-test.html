@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Speech Test</title>
+    <style>
+        body { font-family: monospace; background:#111; color:#eee; padding:20px; }
+        button { display:block; width:100%; padding:16px; margin:8px 0;
+                 font-size:18px; border:none; border-radius:8px; cursor:pointer; }
+        .green  { background:#2E7D32; color:#fff; }
+        .blue   { background:#0D47A1; color:#fff; }
+        .orange { background:#E65100; color:#fff; }
+        #log { background:#000; padding:12px; border-radius:8px; margin-top:16px;
+               font-size:12px; line-height:1.8; min-height:120px; white-space:pre-wrap; }
+    </style>
+</head>
+<body>
+    <h2>🎾 Speech Diagnosis</h2>
+    <div id="log">A aguardar...</div>
+
+    <button class="green" onclick="test1()">1 — Teste directo (speak aqui)</button>
+    <button class="blue"  onclick="test2()">2 — Teste via setTimeout 0ms</button>
+    <button class="orange" onclick="test3()">3 — Listar vozes disponíveis</button>
+    <button class="green" onclick="test4()">4 — Frase de árbitro: "Fifteen Love"</button>
+    <button class="blue"  onclick="test5()">5 — Forçar resume + speak</button>
+
+    <script>
+        var log = document.getElementById('log');
+        function addLog(msg) {
+            log.textContent += '\n' + new Date().toISOString().substr(11,8) + ' ' + msg;
+        }
+
+        addLog('speechSynthesis: ' + (!!window.speechSynthesis));
+        addLog('userAgent: ' + navigator.userAgent.substr(0,80));
+
+        function test1() {
+            addLog('--- TEST 1: speak() directo ---');
+            if (!window.speechSynthesis) { addLog('ERRO: sem speechSynthesis'); return; }
+            addLog('paused=' + speechSynthesis.paused + ' speaking=' + speechSynthesis.speaking + ' pending=' + speechSynthesis.pending);
+            speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance('Test one. Direct call.');
+            u.lang = 'en-GB'; u.rate = 0.95; u.volume = 1.0;
+            u.onstart  = function() { addLog('✓ onstart disparou'); }
+            u.onend    = function() { addLog('✓ onend disparou'); }
+            u.onerror  = function(e) { addLog('✗ ERRO: ' + e.error); }
+            speechSynthesis.speak(u);
+            addLog('speak() chamado. speaking=' + speechSynthesis.speaking);
+        }
+
+        function test2() {
+            addLog('--- TEST 2: speak() via setTimeout ---');
+            setTimeout(function() {
+                if (!window.speechSynthesis) return;
+                speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance('Test two. Timeout.');
+                u.lang = 'en-GB'; u.volume = 1.0;
+                u.onstart = function() { addLog('✓ onstart (timeout)'); }
+                u.onerror = function(e) { addLog('✗ ERRO (timeout): ' + e.error); }
+                speechSynthesis.speak(u);
+                addLog('speak() via timeout chamado');
+            }, 0);
+        }
+
+        function test3() {
+            addLog('--- TEST 3: vozes ---');
+            var voices = speechSynthesis.getVoices();
+            addLog('vozes imediatas: ' + voices.length);
+            if (voices.length > 0) {
+                voices.slice(0,5).forEach(function(v) {
+                    addLog('  ' + v.lang + ' | ' + v.name);
+                });
+            }
+            speechSynthesis.onvoiceschanged = function() {
+                var v2 = speechSynthesis.getVoices();
+                addLog('onvoiceschanged: ' + v2.length + ' vozes');
+                v2.slice(0,5).forEach(function(v) {
+                    addLog('  ' + v.lang + ' | ' + v.name);
+                });
+            };
+        }
+
+        function test4() {
+            addLog('--- TEST 4: "Fifteen Love" ---');
+            speechSynthesis.cancel();
+            var u = new SpeechSynthesisUtterance('Fifteen Love');
+            u.lang = 'en-GB'; u.rate = 0.95; u.volume = 1.0;
+            u.onstart = function() { addLog('✓ onstart'); }
+            u.onend   = function() { addLog('✓ onend'); }
+            u.onerror = function(e) { addLog('✗ ERRO: ' + e.error); }
+            speechSynthesis.speak(u);
+        }
+
+        function test5() {
+            addLog('--- TEST 5: resume + speak ---');
+            if (speechSynthesis.paused) {
+                speechSynthesis.resume();
+                addLog('resume() chamado');
+            }
+            var u = new SpeechSynthesisUtterance('Resume test. Deuce.');
+            u.lang = 'en-GB'; u.volume = 1.0;
+            u.onstart = function() { addLog('✓ onstart'); }
+            u.onerror = function(e) { addLog('✗ ERRO: ' + e.error); }
+            speechSynthesis.speak(u);
+        }
+    </script>
+</body>
+</html>
