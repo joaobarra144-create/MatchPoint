@@ -1,6 +1,0 @@
-.gradle/
-build/
-*.class
-.idea/
-local.properties
-.kotlin/
