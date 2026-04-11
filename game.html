@@ -15,12 +15,23 @@
     <canvas id="ComposeTarget"></canvas>
     <script>
         // ── Web Speech API ──────────────────────────────────────────────────
+        // Em mobile (Android/iOS) o speechSynthesis dentro de iframe é bloqueado.
+        // Solução: enviar mensagem ao documento pai (index.html) via postMessage
+        // O pai tem acesso directo à Speech API com contexto de utilizador válido.
         function speak(text) {
-            if (!window.speechSynthesis) return;
-            window.speechSynthesis.cancel();
-            var u = new SpeechSynthesisUtterance(text);
-            u.lang = "en-US"; u.rate = 1.1;
-            window.speechSynthesis.speak(u);
+            try {
+                window.parent.postMessage({ type: 'SPEAK', text: text }, '*');
+            } catch(e) {
+                // Fallback: tentar directamente (funciona em desktop)
+                if (!window.speechSynthesis) return;
+                try {
+                    if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                    window.speechSynthesis.cancel();
+                    var u = new SpeechSynthesisUtterance(text);
+                    u.lang = 'en-GB'; u.rate = 0.95; u.pitch = 1.0; u.volume = 1.0;
+                    window.speechSynthesis.speak(u);
+                } catch(e2) { console.warn('Speech error:', e2); }
+            }
         }
 
         // ── Web Audio API - sons de bola ────────────────────────────────────
@@ -64,17 +75,14 @@
         function playSound(name) {
             switch(name) {
                 case "hit":
-                    // Batida na raquete: pop curto e agudo
                     playTone(520, "square", 0.07, 0.4, true);
                     playNoise(0.05, 0.15);
                     break;
                 case "bounce":
-                    // Ressalto no chao: toc grave
                     playTone(180, "sine", 0.12, 0.5, true);
                     playNoise(0.04, 0.2);
                     break;
                 case "net":
-                    // Bola na rede: thud surdo
                     playTone(100, "sawtooth", 0.15, 0.4, true);
                     playNoise(0.08, 0.25);
                     break;
@@ -85,7 +93,11 @@
         document.addEventListener("click", function() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioCtx.resume();
-        }, { once: true });
+        });
+        document.addEventListener("touchstart", function() {
+            if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+            audioCtx.resume();
+        });
     </script>
     <script src="app.js"></script>
 </body>

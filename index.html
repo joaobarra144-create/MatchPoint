@@ -22,32 +22,74 @@
             overflow: hidden;
             flex-shrink: 0;
         }
-        .phone-frame iframe {
-            display: block;
-            border: none;
-        }
+        .phone-frame iframe { display: block; border: none; }
     </style>
-<script src="coi-serviceworker.js"></script></head>
+    <script src="coi-serviceworker.js"></script>
+</head>
 <body>
     <div class="phone-frame" id="frame">
-        <iframe id="game" src="game.html" scrolling="no" allowfullscreen></iframe>
+        <iframe id="game" src="game.html"
+            allow="speaker; autoplay"
+            scrolling="no" allowfullscreen></iframe>
     </div>
     <script>
+        // ── Dimensionar o iframe ───────────────────────────────────────────
         (function() {
             var maxH = window.innerHeight * 0.92;
             var maxW = window.innerWidth  * 0.92;
             var h = maxH, w = maxH * 9 / 16;
             if (w > maxW) { w = maxW; h = maxW * 16 / 9; }
             h = Math.floor(h); w = Math.floor(w);
-            var frame = document.getElementById('frame');
+            var frame  = document.getElementById('frame');
             var iframe = document.getElementById('game');
             frame.style.width  = w + 'px';
             frame.style.height = h + 'px';
-            iframe.width  = w;
-            iframe.height = h;
+            iframe.width  = w; iframe.height = h;
             iframe.style.width  = w + 'px';
             iframe.style.height = h + 'px';
         })();
+
+        // ── Speech API no documento PAI ────────────────────────────────────
+        // Android Chrome e iOS Safari bloqueiam speechSynthesis dentro de iframes.
+        // O game.html envia postMessage({ type:'SPEAK', text:'...' }) para cá,
+        // e o pai — que tem contexto de interação válido — executa o speak.
+        var speechUnlocked = false;
+
+        function unlockSpeech() {
+            if (speechUnlocked || !window.speechSynthesis) return;
+            speechUnlocked = true;
+            try {
+                var u = new SpeechSynthesisUtterance('');
+                u.volume = 0;
+                window.speechSynthesis.speak(u);
+            } catch(e) {}
+        }
+
+        function doSpeak(text) {
+            if (!window.speechSynthesis) return;
+            try {
+                if (window.speechSynthesis.paused) window.speechSynthesis.resume();
+                window.speechSynthesis.cancel();
+                var u = new SpeechSynthesisUtterance(text);
+                u.lang   = 'en-GB';
+                u.rate   = 0.95;
+                u.pitch  = 1.0;
+                u.volume = 1.0;
+                window.speechSynthesis.speak(u);
+            } catch(e) { console.warn('Speech error:', e); }
+        }
+
+        // Desbloquear na primeira interacção no documento pai
+        document.addEventListener('click',      unlockSpeech);
+        document.addEventListener('keydown',    unlockSpeech);
+        document.addEventListener('touchstart', unlockSpeech, { passive: true });
+
+        // Receber mensagens do iframe (game.html)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'SPEAK') {
+                doSpeak(event.data.text);
+            }
+        });
     </script>
 </body>
 </html>
