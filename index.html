@@ -23,18 +23,58 @@
             flex-shrink: 0;
         }
         .phone-frame iframe { display: block; border: none; }
+
+        /* Botão de desbloqueio — visível apenas antes do primeiro toque */
+        #unlock-btn {
+            position: fixed;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: rgba(0,0,0,0.82);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            cursor: pointer;
+            -webkit-tap-highlight-color: transparent;
+        }
+        #unlock-btn .racket { font-size: 64px; margin-bottom: 16px; }
+        #unlock-btn .label  {
+            color: #FFD54F;
+            font-family: monospace;
+            font-size: 22px;
+            font-weight: bold;
+            letter-spacing: 2px;
+        }
+        #unlock-btn .sub {
+            color: #888;
+            font-family: monospace;
+            font-size: 13px;
+            margin-top: 8px;
+        }
+        #unlock-btn.hidden { display: none; }
     </style>
     <script src="coi-serviceworker.js"></script>
 </head>
 <body>
-    <div class="phone-frame" id="frame">
+
+    <!-- Ecrã de splash — força interacção do utilizador ANTES de carregar o iframe.
+         Isto é obrigatório em iOS Safari e Android Chrome para desbloquear
+         speechSynthesis fora do iframe. -->
+    <div id="unlock-btn">
+        <div class="racket">🎾</div>
+        <div class="label">MATCH POINT</div>
+        <div class="sub">Toca para iniciar</div>
+    </div>
+
+    <div class="phone-frame" id="frame" style="display:none">
         <iframe id="game" src="game.html"
             allow="speaker; autoplay"
             scrolling="no" allowfullscreen></iframe>
     </div>
+
     <script>
         // ── Dimensionar o iframe ───────────────────────────────────────────
-        (function() {
+        function resizeFrame() {
             var maxH = window.innerHeight * 0.92;
             var maxW = window.innerWidth  * 0.92;
             var h = maxH, w = maxH * 9 / 16;
@@ -47,23 +87,10 @@
             iframe.width  = w; iframe.height = h;
             iframe.style.width  = w + 'px';
             iframe.style.height = h + 'px';
-        })();
-
-        // ── Speech API no documento PAI ────────────────────────────────────
-        // Android Chrome e iOS Safari bloqueiam speechSynthesis dentro de iframes.
-        // O game.html envia postMessage({ type:'SPEAK', text:'...' }) para cá,
-        // e o pai — que tem contexto de interação válido — executa o speak.
-        var speechUnlocked = false;
-
-        function unlockSpeech() {
-            if (speechUnlocked || !window.speechSynthesis) return;
-            speechUnlocked = true;
-            try {
-                var u = new SpeechSynthesisUtterance('');
-                u.volume = 0;
-                window.speechSynthesis.speak(u);
-            } catch(e) {}
         }
+
+        // ── Speech API ─────────────────────────────────────────────────────
+        var speechReady = false;
 
         function doSpeak(text) {
             if (!window.speechSynthesis) return;
@@ -79,17 +106,55 @@
             } catch(e) { console.warn('Speech error:', e); }
         }
 
-        // Desbloquear na primeira interacção no documento pai
-        document.addEventListener('click',      unlockSpeech);
-        document.addEventListener('keydown',    unlockSpeech);
-        document.addEventListener('touchstart', unlockSpeech, { passive: true });
+        // ── Splash: desbloquear speech exactamente no handler de toque ─────
+        // iOS e Android exigem que speechSynthesis.speak() seja chamado
+        // DIRECTAMENTE dentro de um evento de toque/clique do utilizador,
+        // não em setTimeout, Promise, ou postMessage handler.
+        // Por isso fazemos um speak silencioso aqui no splash,
+        // e daí em diante o contexto fica desbloqueado.
+        var unlockBtn = document.getElementById('unlock-btn');
 
-        // Receber mensagens do iframe (game.html)
+        function handleUnlock(e) {
+            e.preventDefault();
+
+            if (!speechReady) {
+                speechReady = true;
+                // Speak silencioso directamente no handler de toque — obrigatório iOS
+                if (window.speechSynthesis) {
+                    try {
+                        window.speechSynthesis.cancel();
+                        var u = new SpeechSynthesisUtterance('ready');
+                        u.volume = 0.01; // quase silencioso mas não zero (iOS rejeita 0)
+                        u.lang = 'en-GB';
+                        window.speechSynthesis.speak(u);
+                    } catch(e2) {}
+                }
+            }
+
+            // Mostrar o jogo
+            unlockBtn.classList.add('hidden');
+            var frame = document.getElementById('frame');
+            frame.style.display = 'block';
+            resizeFrame();
+        }
+
+        unlockBtn.addEventListener('touchend', handleUnlock, { passive: false });
+        unlockBtn.addEventListener('click',    handleUnlock);
+
+        // ── Receber pedidos de speech do iframe via postMessage ────────────
         window.addEventListener('message', function(event) {
             if (event.data && event.data.type === 'SPEAK') {
                 doSpeak(event.data.text);
             }
         });
+
+        // Workaround Chrome Android: speechSynthesis.speaking fica bloqueado
+        // após alguns segundos. Refrescar com getVoices() periodicamente.
+        setInterval(function() {
+            if (window.speechSynthesis && !window.speechSynthesis.speaking) {
+                window.speechSynthesis.getVoices();
+            }
+        }, 5000);
     </script>
 </body>
 </html>
