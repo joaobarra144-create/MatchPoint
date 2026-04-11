@@ -1,0 +1,11 @@
+abi_version=1.8.0
+builtins_platform=WASM
+compiler_version=2.0.20
+depends=components.resources\:library org.jetbrains.compose.material3\:material3 org.jetbrains.compose.material\:material-ripple org.jetbrains.compose.foundation\:foundation org.jetbrains.compose.animation\:animation org.jetbrains.compose.animation\:animation-core org.jetbrains.kotlinx\:kotlinx-coroutines-core org.jetbrains.kotlinx\:atomicfu org.jetbrains.compose.material\:material-icons-core org.jetbrains.compose.foundation\:foundation-layout org.jetbrains.compose.ui\:ui org.jetbrains.compose.runtime\:runtime-saveable kotlin org.jetbrains.compose.runtime\:runtime org.jetbrains.compose.ui\:ui-text org.jetbrains.compose.ui\:ui-graphics org.jetbrains.compose.ui\:ui-unit org.jetbrains.skiko\:skiko org.jetbrains.compose.ui\:ui-geometry org.jetbrains.compose.ui\:ui-util
+ir_signature_versions=1,2
+jsOutputName=retroarkanoid
+metadata_version=1.4.1
+serializedIrFileFingerprints=36pypoc50vs6j.24bwnvhezvpko 3u41b0zr7mtn0.2oj8o4dt5yuv7 1wj14iqjcrwhh.1pl4y9wqvme4o 2ty39jefjjzye.253oe4kpv42ke 1yuwjhgmzjucb.autldky6j2da 1pg9sunr4zvi4.qffuzvubjqze
+serializedKlibFingerprint=1rcrr9xyzdgo1.1r703yoyuqk2j
+unique_name=Tenis_Web\:app
+wasm_targets=wasm-js

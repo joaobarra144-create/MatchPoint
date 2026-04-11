@@ -1,0 +1,9 @@
+R_DEF: Internal format may change without notice
+local
+raw bonus
+raw bounce
+raw death
+raw hit
+raw out
+raw paddle
+raw powerup

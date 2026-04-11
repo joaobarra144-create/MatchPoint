@@ -1,0 +1,30 @@
+[
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_powerup.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/powerup.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_death.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/death.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_paddle.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/paddle.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_out.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/out.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_bounce.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/bounce.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_hit.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/hit.wav"
+    },
+    {
+        "merged": "com.jarbas.retroarkanoid.app-merged_res-44:/raw_bonus.wav.flat",
+        "source": "com.jarbas.retroarkanoid.app-androidMain-45:/raw/bonus.wav"
+    }
+]
