@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Match Point Tennis</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        html, body {
+            width: 100vw; height: 100vh;
+            background: #111;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+        .phone-frame {
+            position: relative;
+            background: #000;
+            border-radius: 36px;
+            box-shadow: 0 0 0 6px #333, 0 0 60px rgba(0,0,0,0.9);
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+        .phone-frame iframe { display: block; border: none; }
+    </style>
+    <script src="coi-serviceworker.js"></script>
+</head>
+<body>
+    <div class="phone-frame" id="frame">
+        <iframe id="game" src="game.html"
+            allow="speaker; autoplay"
+            scrolling="no" allowfullscreen></iframe>
+    </div>
+    <script>
+        (function() {
+            var maxH = window.innerHeight * 0.92;
+            var maxW = window.innerWidth  * 0.92;
+            var h = maxH, w = maxH * 9 / 16;
+            if (w > maxW) { w = maxW; h = maxW * 16 / 9; }
+            h = Math.floor(h); w = Math.floor(w);
+            var frame  = document.getElementById('frame');
+            var iframe = document.getElementById('game');
+            frame.style.width  = w + 'px';
+            frame.style.height = h + 'px';
+            iframe.width  = w; iframe.height = h;
+            iframe.style.width  = w + 'px';
+            iframe.style.height = h + 'px';
+        })();
+    </script>
+</body>
+</html>
