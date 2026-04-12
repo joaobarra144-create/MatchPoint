@@ -116,13 +116,14 @@
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioCtx.resume();
         });
-    </script>
+   
 	// Chamado pelo Kotlin via jsPostMuteToParent()
 	function postMuteToParent(muted) {
 	    try {
 		window.parent.postMessage({ type: 'SET_MUTE', value: muted }, '*');
 	    } catch(e) {}
 	}
+    </script>
     <script src="app.js"></script>
 </body>
 </html>
