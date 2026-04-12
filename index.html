@@ -58,6 +58,9 @@
     </div>
 
     <script>
+        // ── flag de mute global ─────────────────────────────────────────────
+        var isMuted = false;
+
         function resizeFrame() {
             var maxH = window.innerHeight * 0.92;
             var maxW = window.innerWidth  * 0.92;
@@ -77,11 +80,7 @@
             if (!window.speechSynthesis) return null;
             var voices = window.speechSynthesis.getVoices() || [];
             if (!voices.length) return null;
-
-            function norm(v) {
-                return (v.lang || '').replace(/_/g, '-').toLowerCase();
-            }
-
+            function norm(v) { return (v.lang || '').replace(/_/g, '-').toLowerCase(); }
             return voices.find(function(v){ return norm(v) === 'en-us'; })
                 || voices.find(function(v){ return norm(v).startsWith('en-'); })
                 || voices.find(function(v){ return v.default; })
@@ -89,33 +88,32 @@
         }
 
         function doSpeak(text) {
+            if (isMuted) return;                          // ← bloqueia árbitro
             if (!window.speechSynthesis) return;
             try {
                 var synth = window.speechSynthesis;
                 var voice = pickVoice();
-
                 if (synth.paused) synth.resume();
                 synth.cancel();
-
                 var u = new SpeechSynthesisUtterance(text);
-                u.rate = 0.95;
-                u.pitch = 1.0;
-                u.volume = 1.0;
-
+                u.rate = 0.95; u.pitch = 1.0; u.volume = 1.0;
                 if (voice) {
                     u.voice = voice;
                     if (voice.lang) u.lang = voice.lang.replace(/_/g, '-');
                 }
-
                 u.onerror = function(e) {
                     console.warn('Speech error:', e.error,
-                        'voice=', voice ? voice.name : 'none',
-                        'lang=', voice ? voice.lang : 'none');
+                        'voice=', voice ? voice.name : 'none');
                 };
-
                 synth.speak(u);
             } catch(e) {
                 console.warn('Speech exception:', e);
+            }
+        }
+
+        function doCancelSpeech() {
+            if (window.speechSynthesis) {
+                try { window.speechSynthesis.cancel(); } catch(e) {}
             }
         }
 
@@ -131,7 +129,6 @@
 
         function handleUnlock(e) {
             e.preventDefault();
-
             if (!speechUnlocked) {
                 speechUnlocked = true;
                 if (window.speechSynthesis) {
@@ -139,8 +136,7 @@
                         var voice = pickVoice();
                         window.speechSynthesis.cancel();
                         var u = new SpeechSynthesisUtterance('ready');
-                        u.volume = 0.01;
-                        u.rate = 1.0;
+                        u.volume = 0.01; u.rate = 1.0;
                         if (voice) {
                             u.voice = voice;
                             if (voice.lang) u.lang = voice.lang.replace(/_/g, '-');
@@ -149,18 +145,33 @@
                     } catch(e2) {}
                 }
             }
-
             unlockBtn.classList.add('hidden');
             document.getElementById('frame').style.display = 'block';
             resizeFrame();
         }
 
         unlockBtn.addEventListener('touchend', handleUnlock, { passive: false });
-        unlockBtn.addEventListener('click', handleUnlock);
+        unlockBtn.addEventListener('click',    handleUnlock);
 
+        // ── Mensagens do iframe (game.html) ─────────────────────────────────
         window.addEventListener('message', function(event) {
-            if (event.data && event.data.type === 'SPEAK') {
+            if (!event.data) return;
+            var iframe = document.getElementById('game');
+
+            if (event.data.type === 'SPEAK') {
                 doSpeak(event.data.text);
+
+            } else if (event.data.type === 'CANCEL_SPEECH') {
+                doCancelSpeech();
+
+            } else if (event.data.type === 'SET_MUTE') {
+                // O Kotlin envia SET_MUTE directamente ao pai via postMessage
+                isMuted = event.data.value;
+                if (isMuted) doCancelSpeech();
+                // Propagar ao iframe para silenciar o audioCtx
+                if (iframe) iframe.contentWindow.postMessage(
+                    { type: 'SET_MUTE', value: isMuted }, '*'
+                );
             }
         });
 
@@ -169,6 +180,8 @@
                 window.speechSynthesis.getVoices();
             }
         }, 5000);
+
+        window.addEventListener('resize', resizeFrame);
     </script>
 </body>
 </html>

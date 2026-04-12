@@ -15,14 +15,10 @@
     <canvas id="ComposeTarget"></canvas>
     <script>
         // ── Web Speech API ──────────────────────────────────────────────────
-        // Em mobile (Android/iOS) o speechSynthesis dentro de iframe é bloqueado.
-        // Solução: enviar mensagem ao documento pai (index.html) via postMessage
-        // O pai tem acesso directo à Speech API com contexto de utilizador válido.
         function speak(text) {
             try {
                 window.parent.postMessage({ type: 'SPEAK', text: text }, '*');
             } catch(e) {
-                // Fallback: tentar directamente (funciona em desktop)
                 if (!window.speechSynthesis) return;
                 try {
                     if (window.speechSynthesis.paused) window.speechSynthesis.resume();
@@ -34,8 +30,19 @@
             }
         }
 
+        // ── Cancelar speech (chamado pelo Kotlin quando mute é activado) ────
+        function cancelSpeech() {
+            try {
+                window.parent.postMessage({ type: 'CANCEL_SPEECH' }, '*');
+            } catch(e) {
+                if (window.speechSynthesis) window.speechSynthesis.cancel();
+            }
+        }
+
         // ── Web Audio API - sons de bola ────────────────────────────────────
         var audioCtx = null;
+        var audioMuted = false;
+
         function getCtx() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             if (audioCtx.state === "suspended") audioCtx.resume();
@@ -43,6 +50,7 @@
         }
 
         function playTone(freq, type, duration, gainVal, fadeOut) {
+            if (audioMuted) return;
             try {
                 var ctx = getCtx();
                 var osc = ctx.createOscillator();
@@ -56,6 +64,7 @@
         }
 
         function playNoise(duration, gainVal) {
+            if (audioMuted) return;
             try {
                 var ctx = getCtx();
                 var bufSize = ctx.sampleRate * duration;
@@ -73,6 +82,7 @@
         }
 
         function playSound(name) {
+            if (audioMuted) return;
             switch(name) {
                 case "hit":
                     playTone(520, "square", 0.07, 0.4, true);
@@ -89,7 +99,15 @@
             }
         }
 
-        // Activar contexto de audio no primeiro toque (politica do browser)
+        // Receber comando de mute do pai (index.html)
+        window.addEventListener('message', function(event) {
+            if (!event.data) return;
+            if (event.data.type === 'SET_MUTE') {
+                audioMuted = event.data.value;
+            }
+        });
+
+        // Activar contexto de audio no primeiro toque
         document.addEventListener("click", function() {
             if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
             audioCtx.resume();
@@ -99,6 +117,12 @@
             audioCtx.resume();
         });
     </script>
+	// Chamado pelo Kotlin via jsPostMuteToParent()
+	function postMuteToParent(muted) {
+	    try {
+		window.parent.postMessage({ type: 'SET_MUTE', value: muted }, '*');
+	    } catch(e) {}
+	}
     <script src="app.js"></script>
 </body>
 </html>
