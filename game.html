@@ -84,6 +84,10 @@
         function playSound(name) {
             if (audioMuted) return;
             switch(name) {
+		case "serve":                           // ← NOVO — mais forte que hit normal
+		    playTone(680, "square", 0.09, 0.7, true);
+		    playNoise(0.06, 0.3);
+		    break;
                 case "hit":
                     playTone(520, "square", 0.07, 0.4, true);
                     playNoise(0.05, 0.15);
